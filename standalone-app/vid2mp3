@@ -227,17 +227,28 @@ class Win(Adw.ApplicationWindow):
         threading.Thread(target=self.convert_all, daemon=True).start()
 
     # -- conversion ----------------------------------------------------
+    @staticmethod
+    def unique_output_path(path: Path) -> Path:
+        """First "name.mp3" / "name (N).mp3" that doesn't exist yet, so an
+        unrelated MP3 already sitting next to the source is never clobbered."""
+        candidate = path.with_suffix(".mp3")
+        n = 1
+        while candidate.exists():
+            candidate = path.with_name(f"{path.stem} ({n}).mp3")
+            n += 1
+        return candidate
+
     def convert_all(self):
         total = len(self.rows)
         last_output_dir = None
         for i, row in enumerate(self.rows, start=1):
             GLib.idle_add(row.set_working)
             GLib.idle_add(self.update_status, f"Converting {i} of {total}: {row.path.name}")
-            out_path = row.path.with_suffix(".mp3")
+            out_path = self.unique_output_path(row.path)
             try:
                 subprocess.run(
                     [
-                        "ffmpeg", "-y", "-i", str(row.path),
+                        "ffmpeg", "-n", "-i", str(row.path),
                         "-vn", "-acodec", "libmp3lame", "-q:a", "2",
                         str(out_path),
                     ],

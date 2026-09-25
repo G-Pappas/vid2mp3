@@ -91,6 +91,23 @@ Panel {
     root.convertNext()
   }
 
+  // Finds the first "video (N).mp3" that doesn't exist yet and converts into
+  // it, so a same-named MP3 already sitting next to the source is never
+  // silently clobbered. -n on top of that is a second, race-proof guarantee:
+  // ffmpeg refuses instead of overwriting if the path exists anyway by the
+  // time it actually opens the output.
+  readonly property string convertScript: [
+    "in=$1",
+    "base=${in%.*}",
+    "out=\"$base.mp3\"",
+    "n=1",
+    "while [ -e \"$out\" ]; do",
+    "  out=\"${base} (${n}).mp3\"",
+    "  n=$((n + 1))",
+    "done",
+    "/usr/bin/ffmpeg -n -i \"$in\" -vn -acodec libmp3lame -q:a 2 \"$out\" && printf '%s' \"$out\""
+  ].join("\n")
+
   function convertNext() {
     for (var i = 0; i < root.queue.length; i++) {
       if (root.queue[i].status === "queued") {
@@ -101,10 +118,10 @@ Panel {
         root.queue = q
         root.activeIndex = i
 
-        var outPath = entry.path.replace(/\.[^./]+$/, "") + ".mp3"
         convertProc.targetIndex = i
-        convertProc.outPath = outPath
-        convertProc.command = ["ffmpeg", "-y", "-i", entry.path, "-vn", "-acodec", "libmp3lame", "-q:a", "2", outPath]
+        convertProc.outPath = entry.path.replace(/\.[^./]+$/, "") + ".mp3"
+        convertProc.chosenOutPath = ""
+        convertProc.command = ["/usr/bin/bash", "-c", root.convertScript, "vid2mp3-convert", entry.path]
         convertProc.running = true
         return
       }
@@ -176,6 +193,11 @@ Panel {
     id: convertProc
     property int targetIndex: -1
     property string outPath: ""
+    property string chosenOutPath: ""
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: convertProc.chosenOutPath = text.trim()
+    }
     stderr: StdioCollector { waitForEnd: true }
     onExited: function(exitCode) {
       var q = root.queue.slice()
@@ -183,7 +205,7 @@ Panel {
         var entry = Object.assign({}, q[convertProc.targetIndex])
         if (exitCode === 0) {
           entry.status = "done"
-          entry.outPath = convertProc.outPath
+          entry.outPath = convertProc.chosenOutPath || convertProc.outPath
           root.batchDone++
         } else {
           entry.status = "error"
