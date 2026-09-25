@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "id": "gpappas.vid2mp3",
   "name": "Video to MP3",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "gpappas",
-  "description": "One-click launcher for the Video to MP3 converter",
+  "description": "Drag-and-drop video to MP3 conversion from the bar",
   "kinds": [
     "bar-widget"
   ],
@@ -13,8 +13,8 @@
   },
   "barWidget": {
     "displayName": "Video to MP3",
-    "description": "Launch the Video to MP3 converter",
-    "category": "Utility",
+    "description": "Convert video files to MP3 — drag onto the icon or pick from the popup",
+    "category": "Media",
     "allowMultiple": false,
     "defaultSection": "right"
   }
