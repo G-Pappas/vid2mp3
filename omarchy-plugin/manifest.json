@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "gpappas.vid2mp3",
+  "name": "Video to MP3",
+  "version": "1.0.0",
+  "author": "gpappas",
+  "description": "One-click launcher for the Video to MP3 converter",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Widget.qml"
+  },
+  "barWidget": {
+    "displayName": "Video to MP3",
+    "description": "Launch the Video to MP3 converter",
+    "category": "Utility",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

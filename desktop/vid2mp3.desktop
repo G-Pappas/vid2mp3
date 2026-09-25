@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Video to MP3
+Comment=Convert video files to MP3 audio
+Exec=/home/gpappas/.local/bin/vid2mp3
+Icon=folder-videos-symbolic
+Terminal=false
+Categories=AudioVideo;Audio;Utility;
