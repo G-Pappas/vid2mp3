@@ -2,7 +2,9 @@
 
 An [Omarchy](https://omarchy.org/) bar plugin that converts video files to MP3 — drag a video onto the bar icon, or pick files from a popup, and get an MP3 next to the source file. A standalone GTK4 app for bigger batches is included too.
 
-## Screenshots
+## Screenshot
+
+<img src="preview.png" alt="Video to MP3 popup, open from the bar, mid-conversion with one file done and one converting" width="500">
 
 The bar icon (🎵) sits in the status bar; clicking it opens a popup styled to match Omarchy's built-in panels (OpenVPN, PortWatch):
 
