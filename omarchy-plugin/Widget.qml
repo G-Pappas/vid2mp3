@@ -141,6 +141,12 @@ Panel {
     if (!pickerProc.running) pickerProc.running = true
   }
 
+  // Resolve a script bundled next to this QML file so the plugin works from
+  // any user's plugin directory without a hardcoded install path.
+  function bundledPath(name) {
+    return decodeURIComponent(String(Qt.resolvedUrl(name)).replace(/^file:\/\//, ""))
+  }
+
   function pathsFromDropUrls(urls) {
     var paths = []
     for (var i = 0; i < urls.length; i++) {
@@ -156,7 +162,7 @@ Panel {
 
   Process {
     id: pickerProc
-    command: ["/home/gpappas/.local/bin/vid2mp3-pick"]
+    command: [root.bundledPath("vid2mp3-pick")]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
@@ -273,7 +279,7 @@ Panel {
                 tooltipText: "Open full app"
                 foreground: root.foreground
                 fontFamily: root.fontFamily
-                onClicked: if (root.bar) root.bar.run("/home/gpappas/.local/bin/vid2mp3")
+                onClicked: if (root.bar) root.bar.run("vid2mp3")
               }
             }
           }
