@@ -19,6 +19,8 @@ Panel {
   property int activeIndex: -1
   property int batchDone: 0
   property int batchError: 0
+  property bool ffmpegAvailable: true
+  property bool ffmpegChecked: false
 
   readonly property int queuedCount: {
     var n = 0
@@ -87,7 +89,7 @@ Panel {
   }
 
   function startConvert() {
-    if (root.converting) return
+    if (root.converting || !root.ffmpegAvailable) return
     root.convertNext()
   }
 
@@ -105,7 +107,7 @@ Panel {
     "  out=\"${base} (${n}).mp3\"",
     "  n=$((n + 1))",
     "done",
-    "/usr/bin/ffmpeg -n -i \"$in\" -vn -acodec libmp3lame -q:a 2 \"$out\" && printf '%s' \"$out\""
+    "ffmpeg -n -i \"$in\" -vn -acodec libmp3lame -q:a 2 \"$out\" && printf '%s' \"$out\""
   ].join("\n")
 
   function convertNext() {
@@ -176,6 +178,20 @@ Panel {
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
   onOpenedChanged: if (opened) Qt.callLater(function() { keys.forceActiveFocus() })
+  Component.onCompleted: ffmpegCheckProc.running = true
+
+  // `omarchy plugin add` only clones the plugin — it never installs system
+  // packages, so ffmpeg being on PATH isn't guaranteed. Check once up front
+  // rather than letting every queued file fail with an opaque "exited with
+  // code 127" once conversion actually runs.
+  Process {
+    id: ffmpegCheckProc
+    command: ["/usr/bin/bash", "-c", "command -v ffmpeg >/dev/null 2>&1"]
+    onExited: function(exitCode) {
+      root.ffmpegAvailable = exitCode === 0
+      root.ffmpegChecked = true
+    }
+  }
 
   Process {
     id: pickerProc
@@ -309,6 +325,18 @@ Panel {
           PanelSeparator { foreground: root.foreground }
 
           Text {
+            visible: root.ffmpegChecked && !root.ffmpegAvailable
+            width: parent.width
+            text: "⚠ ffmpeg not found. Install it (e.g. “sudo pacman -S ffmpeg”) to convert videos."
+            textFormat: Text.PlainText
+            wrapMode: Text.WordWrap
+            color: bar ? bar.urgent : Color.urgent
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
+            font.bold: true
+          }
+
+          Text {
             width: parent.width
             text: "Tip: drag video files onto the 🎵 bar icon to queue them."
             textFormat: Text.PlainText
@@ -337,7 +365,7 @@ Panel {
               dim: root.dim
               fontFamily: root.fontFamily
               label: root.converting ? "Converting…" : "Convert All"
-              enabled: !root.converting && root.queuedCount > 0
+              enabled: !root.converting && root.queuedCount > 0 && root.ffmpegAvailable
               onActivated: root.startConvert()
             }
           }

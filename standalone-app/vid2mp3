@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Simple drag-and-drop video -> MP3 converter (GTK4 + Adwaita, uses ffmpeg)."""
 import os
+import shutil
 import subprocess
 import threading
 from pathlib import Path
@@ -84,6 +85,10 @@ class Win(Adw.ApplicationWindow):
         self.set_default_size(560, 480)
         self.rows: list[Row] = []
         self.converting = False
+        # `omarchy plugin add`/copying this script around never installs system
+        # packages, so ffmpeg being on PATH isn't guaranteed — check once up
+        # front rather than letting every conversion fail with a raw traceback.
+        self.ffmpeg_available = shutil.which("ffmpeg") is not None
 
         toolbar = Adw.ToolbarView()
         header = Adw.HeaderBar()
@@ -101,6 +106,20 @@ class Win(Adw.ApplicationWindow):
         header.pack_end(self.convert_btn)
 
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+
+        if not self.ffmpeg_available:
+            warning = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            warning.set_margin_top(8)
+            warning.set_margin_start(12)
+            warning.set_margin_end(12)
+            warning.append(Gtk.Image.new_from_icon_name("dialog-warning-symbolic"))
+            warning_label = Gtk.Label(
+                label="ffmpeg not found — install it (e.g. “sudo pacman -S ffmpeg”) to convert videos.",
+                xalign=0,
+            )
+            warning_label.set_wrap(True)
+            warning.append(warning_label)
+            outer.append(warning)
 
         self.stack = Gtk.Stack()
         self.stack.set_vexpand(True)
@@ -171,7 +190,8 @@ class Win(Adw.ApplicationWindow):
         row.list_row = list_row
         self.listbox.append(list_row)
         self.rows.append(row)
-        self.convert_btn.set_sensitive(True)
+        if self.ffmpeg_available:
+            self.convert_btn.set_sensitive(True)
 
     def remove_row(self, row: Row):
         if self.converting:
@@ -217,7 +237,7 @@ class Win(Adw.ApplicationWindow):
         return True
 
     def on_convert_clicked(self, _btn):
-        if self.converting or not self.rows:
+        if self.converting or not self.rows or not self.ffmpeg_available:
             return
         self.converting = True
         self.convert_btn.set_sensitive(False)
