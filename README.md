@@ -72,13 +72,16 @@ Make sure `~/.local/bin` is on your `PATH`. Launch it from your app grid ("Video
 
 ## How conversion works
 
-Both the plugin and the standalone app run:
+Both the plugin and the standalone app convert with:
 
 ```sh
-ffmpeg -y -i <in> -vn -acodec libmp3lame -q:a 2 <out>.mp3
+ffmpeg -n -i <in> -vn -acodec libmp3lame -q:a 2 <out>.mp3
 ```
 
-Output is written next to the source file.
+Output is written next to the source file. If `<out>.mp3` already exists,
+the next free name is used instead (`<out> (1).mp3`, `<out> (2).mp3`, ...)
+— `-n` also makes ffmpeg itself refuse rather than overwrite, as a second
+guarantee against a same-named file ever being clobbered.
 
 ## License
 
